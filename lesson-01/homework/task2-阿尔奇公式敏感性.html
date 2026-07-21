@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>任务二 · 阿尔奇公式敏感性实验</title>
+<style>
+  :root{
+    color-scheme: light dark;
+    --surface-0:#f5f5f3; --surface-1:#fcfcfb; --border:#dedcd6;
+    --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#7a786f;
+    --grid:#e7e5df;
+    --s-1:#2a78d6; --s-2:#eb6834;
+    --accent-bg:#eef4fd;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      --surface-0:#121211; --surface-1:#1a1a19; --border:#33332f;
+      --text-primary:#fff; --text-secondary:#c3c2b7; --text-muted:#8f8e84;
+      --grid:#2b2b28;
+      --s-1:#3987e5; --s-2:#d95926;
+      --accent-bg:#16202e;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:28px 20px 64px;background:var(--surface-0);color:var(--text-primary);
+    font:15px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;}
+  .wrap{max-width:1020px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--text-secondary);font-size:13.5px;margin:0 0 22px}
+  .card{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
+  .card h2{font-size:16px;margin:0 0 2px}
+  .card .hint{font-size:12.5px;color:var(--text-muted);margin:0 0 14px}
+  .formula{font-size:17px;text-align:center;padding:12px;background:var(--surface-0);
+    border:1px solid var(--border);border-radius:9px;margin:0 0 16px;font-variant-numeric:tabular-nums}
+  .formula sub,.formula sup{font-size:.7em}
+  .params{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px 22px}
+  .p{font-size:12.5px}
+  .p label{display:flex;justify-content:space-between;color:var(--text-secondary);margin-bottom:3px}
+  .p b{color:var(--text-primary);font-variant-numeric:tabular-nums;font-size:13.5px}
+  input[type=range]{width:100%;accent-color:var(--s-1);margin:0}
+  input[type=range].alt{accent-color:#c9542a}
+  .chartbox{position:relative}
+  svg{display:block;width:100%}
+  .tip{position:absolute;pointer-events:none;opacity:0;transition:opacity .1s;
+    background:var(--surface-1);border:1px solid var(--border);border-radius:8px;padding:7px 10px;
+    font-size:12.5px;line-height:1.5;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.14);z-index:9}
+  .readout{display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;margin-top:14px}
+  .ro{flex:1 1 150px;background:var(--surface-0);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .ro .k{font-size:11.5px;color:var(--text-muted)}
+  .ro .v{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.3}
+  .ro .u{font-size:12px;color:var(--text-secondary)}
+  .ro.hi{border-color:var(--s-1);background:var(--accent-bg)}
+  .answer{border-left:3px solid var(--s-1);background:var(--accent-bg);border-radius:0 10px 10px 0;
+    padding:14px 18px;margin-top:16px}
+  .answer h3{margin:0 0 6px;font-size:14px}
+  .answer p{margin:0 0 8px;font-size:13.5px;color:var(--text-secondary)}
+  .answer p:last-child{margin-bottom:0}
+  .answer em{color:var(--text-primary);font-style:normal;font-weight:600}
+  button{font:inherit;font-size:13px;padding:6px 13px;border-radius:999px;cursor:pointer;
+    border:1px solid var(--border);background:transparent;color:var(--text-secondary)}
+  button:hover{border-color:var(--text-muted);color:var(--text-primary)}
+  .foot{font-size:12.5px;color:var(--text-muted);text-align:center;margin-top:28px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>任务二 · 阿尔奇公式的敏感性实验</h1>
+  <p class="sub">拖动滑块，看电阻率对孔隙度和饱和度到底有多敏感</p>
+
+  <div class="card">
+    <div class="formula">
+      ρ = a · ρ<sub>w</sub> · φ<sup>−m</sup> · S<sub>w</sub><sup>−n</sup>
+    </div>
+    <div class="params">
+      <div class="p"><label><span>胶结系数 a</span> <b id="l-a">1.00</b></label>
+        <input type="range" id="a" min="0.5" max="2" step="0.05" value="1"></div>
+      <div class="p"><label><span>胶结指数 m</span> <b id="l-m">2.00</b></label>
+        <input type="range" id="m" min="1.2" max="3" step="0.05" value="2"></div>
+      <div class="p"><label><span>饱和度指数 n</span> <b id="l-n">2.00</b></label>
+        <input type="range" id="n" min="1.2" max="3" step="0.05" value="2"></div>
+      <div class="p"><label><span>地层水电阻率 ρ<sub>w</sub></span> <b id="l-rw">10.0 Ω·m</b></label>
+        <input type="range" id="rw" min="0.05" max="50" step="0.05" value="10"></div>
+    </div>
+    <div style="margin-top:14px"><button id="reset">恢复作业给定值（a=1, m=2, n=2, ρ<sub>w</sub>=10）</button></div>
+  </div>
+
+  <div class="card">
+    <h2>(a) ρ 随孔隙度 φ 的变化　<span style="color:var(--text-muted);font-weight:400;font-size:13px">S<sub>w</sub> = 1（全饱和）</span></h2>
+    <p class="hint">纵轴对数。悬停读数；下面两个滑块选取要对比的两个孔隙度。</p>
+    <div class="chartbox" id="boxA">
+      <svg id="chartA" role="img" aria-label="电阻率随孔隙度变化的对数曲线"></svg>
+      <div class="tip" id="tipA"></div>
+    </div>
+    <div class="params" style="margin-top:14px">
+      <div class="p"><label><span>对比点 φ₁</span> <b id="l-p1">5.0 %</b></label>
+        <input type="range" id="p1" min="1" max="40" step="0.5" value="5"></div>
+      <div class="p"><label><span>对比点 φ₂</span> <b id="l-p2">30.0 %</b></label>
+        <input type="range" id="p2" class="alt" min="1" max="40" step="0.5" value="30"></div>
+    </div>
+    <div class="readout">
+      <div class="ro"><div class="k">φ₁ 处电阻率</div><div class="v" id="rA1">–</div><div class="u">Ω·m</div></div>
+      <div class="ro"><div class="k">φ₂ 处电阻率</div><div class="v" id="rA2">–</div><div class="u">Ω·m</div></div>
+      <div class="ro hi"><div class="k">ρ(φ₁) / ρ(φ₂)</div><div class="v" id="rAr">–</div><div class="u" id="rAu">倍</div></div>
+    </div>
+    <div class="answer">
+      <h3>答：孔隙度 5% → 30%，电阻率变化几倍？</h3>
+      <p>ρ ∝ φ<sup>−m</sup>，所以比值只取决于孔隙度之比：<br>
+         ρ(5%)/ρ(30%) = (0.30/0.05)<sup>2</sup> = 6² = <em>36 倍</em>。</p>
+      <p>代入具体数值：ρ(5%) = 1×10×0.05⁻² = <em>4 000 Ω·m</em>，
+         ρ(30%) = 1×10×0.30⁻² = <em>111.1 Ω·m</em>。</p>
+      <p>孔隙度只挪了 6 倍，电阻率就走了 36 倍——<em>指数放大</em>是电阻率之所以是好探针的原因。
+         把上面的 m 拖到 2.5（碳酸盐岩常见值），同样的孔隙度变化会放大到 88 倍。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>(b) ρ 随含水饱和度 S<sub>w</sub> 的变化　<span style="color:var(--text-muted);font-weight:400;font-size:13px">φ = 0.20</span></h2>
+    <p class="hint">纵轴对数。S<sub>w</sub> 从 100% 往左降，就是「水被油气替换」的过程。</p>
+    <div class="chartbox" id="boxB">
+      <svg id="chartB" role="img" aria-label="电阻率随含水饱和度变化的对数曲线"></svg>
+      <div class="tip" id="tipB"></div>
+    </div>
+    <div class="params" style="margin-top:14px">
+      <div class="p"><label><span>孔隙度 φ（本图固定值）</span><b id="l-phi">0.200</b></label>
+        <input type="range" id="phi" min="0.02" max="0.40" step="0.005" value="0.20"></div>
+      <div class="p"><label><span>对比点 S<sub>w1</sub></span> <b id="l-s1">100 %</b></label>
+        <input type="range" id="s1" min="10" max="100" step="1" value="100"></div>
+      <div class="p"><label><span>对比点 S<sub>w2</sub></span> <b id="l-s2">30 %</b></label>
+        <input type="range" id="s2" class="alt" min="10" max="100" step="1" value="30"></div>
+    </div>
+    <div class="readout">
+      <div class="ro"><div class="k">S<sub>w1</sub> 处电阻率</div><div class="v" id="rB1">–</div><div class="u">Ω·m</div></div>
+      <div class="ro"><div class="k">S<sub>w2</sub> 处电阻率</div><div class="v" id="rB2">–</div><div class="u">Ω·m</div></div>
+      <div class="ro hi"><div class="k">ρ(S<sub>w2</sub>) / ρ(S<sub>w1</sub>)</div><div class="v" id="rBr">–</div><div class="u">倍</div></div>
+    </div>
+    <div class="answer">
+      <h3>答：饱和度 100% → 30%，电阻率变化几倍？</h3>
+      <p>ρ ∝ S<sub>w</sub><sup>−n</sup>，比值 = (1.0/0.3)² = 1/0.09 = <em>11.1 倍</em>。</p>
+      <p>代入：ρ(S<sub>w</sub>=1) = 1×10×0.2⁻²×1⁻² = <em>250 Ω·m</em>，
+         ρ(S<sub>w</sub>=0.3) = 250 / 0.09 = <em>2 777.8 Ω·m</em>。</p>
+      <p>注意曲线在左端<em>陡然上翘</em>：饱和度越低，同样一点点含水量的减少
+         带来的电阻率跳变越大。这正是电阻率测井能区分「油层 / 水层」的物理依据——
+         而且它是<em>非线性放大</em>，不是线性响应。</p>
+    </div>
+  </div>
+
+  <p class="foot">第 01 课作业 · 电磁勘探理论与方法</p>
+</div>
+
+<script>
+const NS = "http://www.w3.org/2000/svg";
+const el = (t,a) => { const n = document.createElementNS(NS,t); for(const k in a) n.setAttribute(k,a[k]); return n; };
+const $  = id => document.getElementById(id);
+const P  = {};
+["a","m","n","rw","p1","p2","phi","s1","s2"].forEach(k => P[k] = $(k));
+
+const archie = (phi, sw) => (+P.a.value) * (+P.rw.value) * Math.pow(phi, -(+P.m.value)) * Math.pow(sw, -(+P.n.value));
+const nf = v => v >= 1e5 ? v.toExponential(2).replace("e+","×10^")
+              : v >= 1000 ? v.toLocaleString("en-US",{maximumFractionDigits:0})
+              : v.toLocaleString("en-US",{maximumFractionDigits: v < 10 ? 2 : 1});
+const sup = n => String(n).split("").map(c => ({"-":"⁻","0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹"})[c]).join("");
+
+/* generic log-y line chart */
+function plot(svg, box, tip, cfg){
+  const W = Math.max(box.clientWidth, 520), H = 300;
+  const padL = 64, padR = 22, padT = 16, padB = 46;
+  const pw = W - padL - padR, ph = H - padT - padB;
+
+  const ys  = cfg.pts.map(p => p.y);
+  const lo  = Math.floor(Math.log10(Math.min(...ys)) * 4) / 4 - .05;
+  const hi  = Math.ceil (Math.log10(Math.max(...ys)) * 4) / 4 + .05;
+  const X   = v => padL + (v - cfg.x0) / (cfg.x1 - cfg.x0) * pw;
+  const Y   = v => padT + (hi - Math.log10(v)) / (hi - lo) * ph;
+
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("height", H);
+  svg.textContent = "";
+
+  // y decade gridlines
+  for(let d = Math.ceil(lo); d <= Math.floor(hi); d++){
+    const py = Y(Math.pow(10, d));
+    svg.appendChild(el("line",{x1:padL,x2:W-padR,y1:py,y2:py,stroke:"var(--grid)","stroke-width":1}));
+    const t = el("text",{x:padL-9,y:py+4,"text-anchor":"end",fill:"var(--text-muted)","font-size":11,"font-family":"inherit"});
+    t.textContent = "10" + sup(d); svg.appendChild(t);
+    // minor
+    if(d < hi) for(let k=2;k<10;k++){
+      const v = k*Math.pow(10,d); if(Math.log10(v)>hi||Math.log10(v)<lo) continue;
+      svg.appendChild(el("line",{x1:padL,x2:W-padR,y1:Y(v),y2:Y(v),stroke:"var(--grid)","stroke-width":.5,opacity:.55}));
+    }
+  }
+  // x ticks
+  cfg.xticks.forEach(v => {
+    const px = X(v);
+    svg.appendChild(el("line",{x1:px,x2:px,y1:padT,y2:padT+ph,stroke:"var(--grid)","stroke-width":1}));
+    const t = el("text",{x:px,y:padT+ph+18,"text-anchor":"middle",fill:"var(--text-muted)","font-size":11,"font-family":"inherit"});
+    t.textContent = cfg.xfmt(v); svg.appendChild(t);
+  });
+  const xl = el("text",{x:padL+pw/2,y:H-8,"text-anchor":"middle",fill:"var(--text-secondary)","font-size":11.5,"font-family":"inherit"});
+  xl.textContent = cfg.xlabel; svg.appendChild(xl);
+  const yl = el("text",{x:14,y:padT+ph/2,"text-anchor":"middle",fill:"var(--text-secondary)","font-size":11.5,
+    "font-family":"inherit",transform:`rotate(-90 14 ${padT+ph/2})`});
+  yl.textContent = "电阻率 ρ（Ω·m，对数轴）"; svg.appendChild(yl);
+
+  // curve
+  const d = cfg.pts.map((p,i) => (i?"L":"M") + X(p.x).toFixed(2) + " " + Y(p.y).toFixed(2)).join(" ");
+  svg.appendChild(el("path",{d, fill:"none", stroke:"var(--s-1)", "stroke-width":2,
+    "stroke-linejoin":"round","stroke-linecap":"round"}));
+
+  // comparison markers
+  cfg.marks.forEach(mk => {
+    const px = X(mk.x), py = Y(mk.y);
+    svg.appendChild(el("line",{x1:px,x2:px,y1:py,y2:padT+ph,stroke:mk.color,"stroke-width":1.5,"stroke-dasharray":"4 3",opacity:.75}));
+    svg.appendChild(el("line",{x1:padL,x2:px,y1:py,y2:py,stroke:mk.color,"stroke-width":1.5,"stroke-dasharray":"4 3",opacity:.75}));
+    svg.appendChild(el("circle",{cx:px,cy:py,r:6,fill:mk.color,stroke:"var(--surface-1)","stroke-width":2}));
+    const t = el("text",{x:px+10,y:py-9,fill:"var(--text-primary)","font-size":11.5,"font-family":"inherit",
+      "font-variant-numeric":"tabular-nums"});
+    t.textContent = `${mk.label} → ${nf(mk.y)} Ω·m`;
+    if(px > W - 190) { t.setAttribute("text-anchor","end"); t.setAttribute("x", px-10); }
+    svg.appendChild(t);
+  });
+
+  // hover crosshair
+  const hx = el("line",{x1:0,x2:0,y1:padT,y2:padT+ph,stroke:"var(--text-muted)","stroke-width":1,opacity:0});
+  const hd = el("circle",{cx:0,cy:0,r:5,fill:"var(--s-1)",stroke:"var(--surface-1)","stroke-width":2,opacity:0});
+  svg.appendChild(hx); svg.appendChild(hd);
+  const hit = el("rect",{x:padL,y:padT,width:pw,height:ph,fill:"transparent"});
+  hit.style.cursor = "crosshair";
+  hit.addEventListener("mousemove", ev => {
+    const b = svg.getBoundingClientRect();
+    const sx = (ev.clientX - b.left) * (W / b.width);
+    const xv = cfg.x0 + (sx - padL) / pw * (cfg.x1 - cfg.x0);
+    const yv = cfg.f(xv);
+    hx.setAttribute("x1", X(xv)); hx.setAttribute("x2", X(xv)); hx.setAttribute("opacity", .5);
+    hd.setAttribute("cx", X(xv)); hd.setAttribute("cy", Y(yv)); hd.setAttribute("opacity", 1);
+    tip.innerHTML = `<b>${cfg.tipx(xv)}</b><br>ρ = <b>${nf(yv)}</b> Ω·m`;
+    tip.style.opacity = 1;
+    const bb = box.getBoundingClientRect();
+    tip.style.left = Math.min(ev.clientX - bb.left + 14, box.clientWidth - tip.offsetWidth - 4) + "px";
+    tip.style.top  = Math.max(ev.clientY - bb.top - 46, 0) + "px";
+  });
+  hit.addEventListener("mouseleave", () => { tip.style.opacity = 0; hx.setAttribute("opacity",0); hd.setAttribute("opacity",0); });
+  svg.appendChild(hit);
+}
+
+function render(){
+  $("l-a").textContent  = (+P.a.value).toFixed(2);
+  $("l-m").textContent  = (+P.m.value).toFixed(2);
+  $("l-n").textContent  = (+P.n.value).toFixed(2);
+  $("l-rw").textContent = (+P.rw.value).toFixed(2) + " Ω·m";
+
+  /* ---- (a) rho vs phi, Sw = 1 ---- */
+  const f1 = phi => archie(phi/100, 1);
+  const ptsA = []; for(let p = 1; p <= 40.0001; p += 0.25) ptsA.push({x:p, y:f1(p)});
+  const p1 = +P.p1.value, p2 = +P.p2.value;
+  $("l-p1").textContent = p1.toFixed(1) + " %";
+  $("l-p2").textContent = p2.toFixed(1) + " %";
+  plot($("chartA"), $("boxA"), $("tipA"), {
+    pts:ptsA, x0:1, x1:40, xticks:[1,5,10,15,20,25,30,35,40],
+    xfmt:v => v + "%", xlabel:"孔隙度 φ（%）", f:f1,
+    tipx:v => "φ = " + v.toFixed(1) + "%",
+    marks:[{x:p1,y:f1(p1),color:"var(--s-1)",label:"φ₁ "+p1.toFixed(1)+"%"},
+           {x:p2,y:f1(p2),color:"var(--s-2)",label:"φ₂ "+p2.toFixed(1)+"%"}]
+  });
+  $("rA1").textContent = nf(f1(p1));
+  $("rA2").textContent = nf(f1(p2));
+  const rA = f1(p1)/f1(p2);
+  $("rAr").textContent = (rA>=1?rA:1/rA).toLocaleString("en-US",{maximumFractionDigits:1});
+  $("rAu").textContent = rA>=1 ? "倍（φ₁ 更高阻）" : "倍（φ₂ 更高阻）";
+
+  /* ---- (b) rho vs Sw, phi fixed ---- */
+  const phi = +P.phi.value;
+  $("l-phi").textContent = phi.toFixed(3);
+  const f2 = sw => archie(phi, sw/100);
+  const ptsB = []; for(let s = 10; s <= 100.0001; s += 0.5) ptsB.push({x:s, y:f2(s)});
+  const s1 = +P.s1.value, s2 = +P.s2.value;
+  $("l-s1").textContent = s1 + " %";
+  $("l-s2").textContent = s2 + " %";
+  plot($("chartB"), $("boxB"), $("tipB"), {
+    pts:ptsB, x0:10, x1:100, xticks:[10,20,30,40,50,60,70,80,90,100],
+    xfmt:v => v + "%", xlabel:"含水饱和度 Sw（%）", f:f2,
+    tipx:v => "Sw = " + v.toFixed(1) + "%",
+    marks:[{x:s1,y:f2(s1),color:"var(--s-1)",label:"Sw₁ "+s1+"%"},
+           {x:s2,y:f2(s2),color:"var(--s-2)",label:"Sw₂ "+s2+"%"}]
+  });
+  $("rB1").textContent = nf(f2(s1));
+  $("rB2").textContent = nf(f2(s2));
+  $("rBr").textContent = (f2(s2)/f2(s1)).toLocaleString("en-US",{maximumFractionDigits:2});
+}
+
+Object.values(P).forEach(s => s.addEventListener("input", render));
+$("reset").onclick = () => {
+  P.a.value=1; P.m.value=2; P.n.value=2; P.rw.value=10;
+  P.p1.value=5; P.p2.value=30; P.phi.value=0.20; P.s1.value=100; P.s2.value=30;
+  render();
+};
+render();
+addEventListener("resize", render);
+</script>
+</body>
+</html>

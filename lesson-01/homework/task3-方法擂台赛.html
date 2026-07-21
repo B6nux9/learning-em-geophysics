@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>任务三 · 方法擂台赛：电阻率 vs 密度</title>
+<style>
+  :root{
+    color-scheme: light dark;
+    --surface-0:#f5f5f3; --surface-1:#fcfcfb; --border:#dedcd6;
+    --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#7a786f;
+    --grid:#e7e5df;
+    --s-1:#2a78d6; --s-2:#eb6834;
+    --good:#0ca30c; --crit:#d03b3b;
+    --accent-bg:#eef4fd; --warm-bg:#fdf1ea;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      --surface-0:#121211; --surface-1:#1a1a19; --border:#33332f;
+      --text-primary:#fff; --text-secondary:#c3c2b7; --text-muted:#8f8e84;
+      --grid:#2b2b28;
+      --s-1:#3987e5; --s-2:#d95926;
+      --accent-bg:#16202e; --warm-bg:#2a1a12;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:28px 20px 64px;background:var(--surface-0);color:var(--text-primary);
+    font:15px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;}
+  .wrap{max-width:1020px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--text-secondary);font-size:13.5px;margin:0 0 22px}
+  .card{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
+  .card h2{font-size:16px;margin:0 0 2px}
+  .card .hint{font-size:12.5px;color:var(--text-muted);margin:0 0 14px}
+  .scene{background:var(--surface-0);border:1px solid var(--border);border-radius:9px;
+    padding:12px 15px;font-size:13.5px;color:var(--text-secondary);margin-bottom:16px}
+  .scene b{color:var(--text-primary)}
+  .params{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px 22px}
+  .p{font-size:12.5px}
+  .p label{display:flex;justify-content:space-between;color:var(--text-secondary);margin-bottom:3px}
+  .p b{color:var(--text-primary);font-variant-numeric:tabular-nums;font-size:13.5px}
+  input[type=range]{width:100%;accent-color:var(--s-1);margin:0}
+  input[type=range].alt{accent-color:#c9542a}
+
+  .duel{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:640px){.duel{grid-template-columns:1fr}}
+  .fighter{border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center}
+  .fighter.a{background:var(--accent-bg);border-color:var(--s-1)}
+  .fighter.b{background:var(--warm-bg);border-color:var(--s-2)}
+  .fighter .who{font-size:12.5px;color:var(--text-secondary);letter-spacing:.5px}
+  .fighter .big{font-size:44px;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums;margin:6px 0 2px}
+  .fighter.a .big{color:var(--s-1)} .fighter.b .big{color:var(--s-2)}
+  .fighter .lit{font-size:12.5px;color:var(--text-secondary);font-variant-numeric:tabular-nums}
+  .fighter .calc{font-size:12px;color:var(--text-muted);margin-top:10px;padding-top:10px;
+    border-top:1px dashed var(--border);text-align:left;font-variant-numeric:tabular-nums}
+  .verdict{margin-top:16px;text-align:center;font-size:14px;color:var(--text-secondary)}
+  .verdict b{font-size:20px;color:var(--text-primary);font-variant-numeric:tabular-nums}
+
+  .chartbox{position:relative}
+  svg{display:block;width:100%}
+  .tip{position:absolute;pointer-events:none;opacity:0;transition:opacity .1s;
+    background:var(--surface-1);border:1px solid var(--border);border-radius:8px;padding:7px 10px;
+    font-size:12.5px;line-height:1.5;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.14);z-index:9}
+
+  .gauge{margin-top:14px}
+  .gauge .row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-secondary);margin-bottom:5px}
+  .gauge .bar{height:12px;border-radius:6px;background:var(--grid);position:relative;overflow:hidden}
+  .gauge .fill{height:100%;border-radius:6px;background:var(--s-2);width:0;transition:width .15s}
+  .gauge .noise{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--crit)}
+  .badge{display:inline-block;font-size:12px;padding:3px 10px;border-radius:999px;margin-top:9px}
+  .badge.no{background:rgba(208,59,59,.13);color:var(--crit)}
+  .badge.yes{background:rgba(12,163,12,.13);color:var(--good)}
+
+  .answer{border-left:3px solid var(--s-1);background:var(--accent-bg);border-radius:0 10px 10px 0;
+    padding:14px 18px;margin-top:16px}
+  .answer h3{margin:0 0 6px;font-size:14px}
+  .answer p{margin:0 0 9px;font-size:13.5px;color:var(--text-secondary)}
+  .answer p:last-child{margin-bottom:0}
+  .answer em{color:var(--text-primary);font-style:normal;font-weight:600}
+  table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums;margin-top:6px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border)}
+  th{color:var(--text-muted);font-weight:500;font-size:12px}
+  button{font:inherit;font-size:13px;padding:6px 13px;border-radius:999px;cursor:pointer;
+    border:1px solid var(--border);background:transparent;color:var(--text-secondary)}
+  button:hover{border-color:var(--text-muted);color:var(--text-primary)}
+  .foot{font-size:12.5px;color:var(--text-muted);text-align:center;margin-top:28px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>任务三 · 方法擂台赛：电阻率 vs 密度</h1>
+  <p class="sub">同一个油气替换事件，两种物性各自能给出多大的信号？</p>
+
+  <div class="card">
+    <div class="scene">
+      情景：孔隙度 <b>20%</b> 的储层，原本 <b>100% 饱和水</b>，现在被油气替换，
+      含水饱和度降为 <b>30%</b>。骨架 2.65、水 1.0、油 0.8 g/cm³；阿尔奇 a=1, m=2, n=2, ρ<sub>w</sub>=10 Ω·m。
+    </div>
+    <div class="params">
+      <div class="p"><label><span>孔隙度 φ</span> <b id="l-phi">0.200</b></label>
+        <input type="range" id="phi" min="0.02" max="0.40" step="0.005" value="0.20"></div>
+      <div class="p"><label><span>替换后含水饱和度 S<sub>w</sub></span> <b id="l-sw">30 %</b></label>
+        <input type="range" id="sw" class="alt" min="5" max="100" step="1" value="30"></div>
+      <div class="p"><label><span>骨架密度 ρ<sub>骨架</sub></span> <b id="l-rm">2.65</b></label>
+        <input type="range" id="rm" min="2.0" max="3.0" step="0.01" value="2.65"></div>
+      <div class="p"><label><span>油密度 ρ<sub>油</sub></span> <b id="l-ro">0.80</b></label>
+        <input type="range" id="ro" min="0.05" max="1.0" step="0.01" value="0.80"></div>
+    </div>
+    <div style="margin-top:14px"><button id="reset">恢复题目给定值</button></div>
+  </div>
+
+  <div class="card">
+    <h2>(a) (b) 两个数字，并排放</h2>
+    <p class="hint">同一次流体替换，电阻率和密度各自的相对变化率。</p>
+    <div class="duel">
+      <div class="fighter a">
+        <div class="who">(a) 电阻率变化率　阿尔奇公式</div>
+        <div class="big" id="dR">–</div>
+        <div class="lit" id="dRlit">–</div>
+        <div class="calc" id="cR"></div>
+      </div>
+      <div class="fighter b">
+        <div class="who">(b) 岩石总密度变化率　体积混合</div>
+        <div class="big" id="dD">–</div>
+        <div class="lit" id="dDlit">–</div>
+        <div class="calc" id="cD"></div>
+      </div>
+    </div>
+    <div class="verdict">电阻率的相对信号是密度的 <b id="ratio">–</b> 倍</div>
+  </div>
+
+  <div class="card">
+    <h2>信号强度对比（对数横轴）</h2>
+    <p class="hint">柱长 = 相对变化率的绝对值。注意横轴是对数——否则密度那根根本画不出来。</p>
+    <div class="chartbox" id="box">
+      <svg id="chart" role="img" aria-label="电阻率与密度相对变化率的对数条形对比"></svg>
+      <div class="tip" id="tip"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>现实检验：这点密度差，重力仪测得到吗？</h2>
+    <p class="hint">用无限平板近似 Δg = 2πG·Δρ·t 估算储层的重力异常，和野外噪声水平比一比。</p>
+    <div class="params">
+      <div class="p"><label><span>储层厚度 t</span> <b id="l-t">30 m</b></label>
+        <input type="range" id="t" min="5" max="300" step="5" value="30"></div>
+      <div class="p"><label><span>野外重力噪声水平</span> <b id="l-nz">20 µGal</b></label>
+        <input type="range" id="nz" class="alt" min="5" max="100" step="5" value="20"></div>
+    </div>
+    <div class="gauge">
+      <div class="row"><span>估算重力异常 |Δg|</span><span id="dg">–</span></div>
+      <div class="bar"><div class="fill" id="fill"></div><div class="noise" id="noiseMark"></div></div>
+      <div style="font-size:11.5px;color:var(--text-muted);margin-top:5px">红线 = 噪声水平（含地形、潮汐、仪器漂移改正后的现实精度）</div>
+      <div id="badge" class="badge no">–</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>(c) 为什么油气勘探中电阻率测井是标准手段，而重力不是？</h2>
+
+    <div class="answer">
+      <h3>先把两个数字并排写出来</h3>
+      <table>
+        <thead><tr><th>物性</th><th>替换前</th><th>替换后</th><th>相对变化</th></tr></thead>
+        <tbody>
+          <tr><td>电阻率 ρ</td><td>250 Ω·m</td><td>2 777.8 Ω·m</td><td style="color:var(--s-1);font-weight:600">+1 011%（11.1 倍）</td></tr>
+          <tr><td>总密度 ρ<sub>b</sub></td><td>2.320 g/cm³</td><td>2.292 g/cm³</td><td style="color:var(--s-2);font-weight:600">−1.21%（0.988 倍）</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:10px">两者相差约 <em>840 倍</em>。同一件地质事件，一个把信号放大了十倍，另一个把信号压成了千分之十二。</p>
+    </div>
+
+    <div class="answer">
+      <h3>结论</h3>
+      <p><em>1 · 分母不同。</em>密度是「体积加权平均」——油只占岩石总体积的 φ·(1−S<sub>w</sub>) = 14%，
+         而且油和水的密度只差 0.2 g/cm³。再怎么替换，也只能动总密度的百分之一二。
+         电阻率则是「指数律 + 逾渗控制」——ρ ∝ S<sub>w</sub><sup>−2</sup>，
+         赶走导电的水就等于掐断了唯一的导电通道，信号是<em>非线性放大</em>的。</p>
+      <p><em>2 · 回到第 01 课那张「物性变化范围表」。</em>密度总共只有 1.0–5.0 g/cm³ 这 <em>0.7 个数量级</em>
+         的活动空间，纵波速度 <em>1.45 个数量级</em>，而电阻率有 <em>13 个数量级</em>。
+         一个物性的"总预算"就那么大，单次流体替换能分到的自然更小。
+         电阻率这次只用掉了 1 个数量级，占它总预算的 1/13；密度用掉了 0.005 个数量级，
+         已经是它总预算的极限附近了。<em>物性变化范围决定了方法的天花板。</em></p>
+      <p><em>3 · 还要和噪声比。</em>把上面的滑块调到 30 m 厚储层：无限平板近似给出重力异常
+         Δg = 2πGΔρt ≈ <em>35 µGal</em>。而高精度野外重力在做完地形、潮汐、漂移改正后，
+         现实噪声就在 <em>20–50 µGal</em> 量级——也就是说信号和噪声<em>同一个量级</em>，
+         信噪比不到 2，还得再扣掉覆盖层密度不确定性带来的模型误差。
+         对比之下，电阻率测井读到的是 250 → 2 778 Ω·m，仪器精度百分之几，信噪比几百。
+         <em>能不能测，从来不是看信号绝对值，而是看信号 / 噪声。</em></p>
+      <p><em>4 · 还有一个杀手锏：重力没有分辨率。</em>重力是体积积分效应、位场，
+         天然存在等效层多解性，无法告诉你「这个变化发生在 2100 m 而不是 1900 m」。
+         电阻率测井是<em>贴着井壁逐点测量</em>，纵向分辨率到厘米级，
+         而且能直接反演出 S<sub>w</sub>（阿尔奇公式就是从 ρ 反算含水饱和度的桥）。
+         勘探要的是「这一层含多少油」，不是「这一片重了一点」。</p>
+      <p><em>一句话：</em>重力对油气而言是「用一个只有 0.7 个数量级动态范围、
+         且分辨率天生模糊的物性，去测一个 1% 的变化」；
+         电阻率是「用一个有 13 个数量级动态范围、且指数放大流体信号的物性，去测一个 1000% 的变化」。
+         这场擂台赛在选择物性的那一刻就已经结束了。</p>
+      <p style="color:var(--text-muted);font-size:12.5px">
+         （补一句公平话：重力不是没用，它在盆地构造、盐丘、基底起伏这类<em>大体积、大密度差</em>
+         的任务上依然是主力——那里 Δρ 是 0.2–0.4 g/cm³ 而不是 0.028。方法没有优劣，
+         只有「你要找的目标在哪个物性上对比度最大」。这就是本课的全部主旨。）</p>
+    </div>
+  </div>
+
+  <p class="foot">第 01 课作业 · 电磁勘探理论与方法</p>
+</div>
+
+<script>
+const NS = "http://www.w3.org/2000/svg";
+const el = (t,a) => { const n = document.createElementNS(NS,t); for(const k in a) n.setAttribute(k,a[k]); return n; };
+const $  = id => document.getElementById(id);
+const IN = {}; ["phi","sw","rm","ro","t","nz"].forEach(k => IN[k] = $(k));
+
+const A=1, M=2, N=2, RW=10, RWATER=1.0, G=6.674e-11;
+const nf = (v,d=1) => v.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+
+function calc(){
+  const phi = +IN.phi.value, sw = +IN.sw.value/100, rm = +IN.rm.value, ro = +IN.ro.value;
+  const r0 = A*RW*Math.pow(phi,-M)*Math.pow(1,-N);
+  const r1 = A*RW*Math.pow(phi,-M)*Math.pow(sw,-N);
+  const d0 = (1-phi)*rm + phi*(1*RWATER + 0*ro);
+  const d1 = (1-phi)*rm + phi*(sw*RWATER + (1-sw)*ro);
+  return {phi, sw, rm, ro, r0, r1, d0, d1,
+          dR:(r1-r0)/r0*100, dD:(d1-d0)/d0*100};
+}
+
+function bars(c){
+  const box = $("box"), svg = $("chart"), tip = $("tip");
+  const W = Math.max(box.clientWidth, 520), padL=104, padR=26, padT=18, padB=44;
+  const rows = [
+    {name:"电阻率 ρ",  v:Math.abs(c.dR), color:"var(--s-1)", note:`${nf(c.r0)} → ${nf(c.r1)} Ω·m`},
+    {name:"总密度 ρb", v:Math.abs(c.dD), color:"var(--s-2)", note:`${nf(c.d0,3)} → ${nf(c.d1,3)} g/cm³`}
+  ];
+  const rowH=54, barH=20, H=padT+rows.length*rowH+padB, pw=W-padL-padR;
+  const lo=-2, hi=4;                                   // 0.01% … 10000%
+  const X = d => padL + (Math.min(Math.max(d,lo),hi)-lo)/(hi-lo)*pw;
+
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`); svg.setAttribute("height",H); svg.textContent="";
+  const sup = n => String(n).split("").map(ch=>({"-":"⁻","0":"⁰","1":"¹","2":"²","3":"³","4":"⁴"})[ch]).join("");
+  for(let d=lo; d<=hi; d++){
+    const px=X(d);
+    svg.appendChild(el("line",{x1:px,x2:px,y1:padT-6,y2:H-padB,stroke:"var(--grid)","stroke-width":1}));
+    const t=el("text",{x:px,y:H-padB+17,"text-anchor":"middle",fill:"var(--text-muted)","font-size":11,"font-family":"inherit"});
+    t.textContent = (d<0?"10"+sup(d):Math.pow(10,d).toLocaleString("en-US"))+"%";
+    svg.appendChild(t);
+  }
+  const xl=el("text",{x:padL+pw/2,y:H-7,"text-anchor":"middle",fill:"var(--text-secondary)","font-size":11.5,"font-family":"inherit"});
+  xl.textContent="相对变化率的绝对值（对数轴，%）"; svg.appendChild(xl);
+
+  rows.forEach((r,i)=>{
+    const y=padT+i*rowH, cy=y+rowH/2-4;
+    const lab=el("text",{x:padL-12,y:cy+5,"text-anchor":"end",fill:"var(--text-primary)","font-size":13,"font-family":"inherit"});
+    lab.textContent=r.name; svg.appendChild(lab);
+    const x1=X(Math.log10(Math.max(r.v,1e-2)));
+    svg.appendChild(el("rect",{x:padL,y:cy-barH/2,width:Math.max(x1-padL,3),height:barH,rx:4,fill:r.color}));
+    const v=el("text",{x:x1+9,y:cy+5,fill:"var(--text-primary)","font-size":13,"font-weight":600,
+      "font-family":"inherit","font-variant-numeric":"tabular-nums"});
+    v.textContent = (r.v>=100? nf(r.v,0) : nf(r.v,2))+"%"; svg.appendChild(v);
+    const nt=el("text",{x:padL,y:cy+barH/2+18,fill:"var(--text-muted)","font-size":11.5,
+      "font-family":"inherit","font-variant-numeric":"tabular-nums"});
+    nt.textContent=r.note; svg.appendChild(nt);
+
+    const hit=el("rect",{x:padL,y:y,width:pw,height:rowH,fill:"transparent"});
+    hit.addEventListener("mousemove",ev=>{
+      const b=box.getBoundingClientRect();
+      tip.innerHTML=`<b>${r.name}</b><br>${r.note}<br>相对变化 <b>${(r.v>=100?nf(r.v,0):nf(r.v,2))}%</b>`;
+      tip.style.opacity=1;
+      tip.style.left=Math.min(ev.clientX-b.left+14, box.clientWidth-tip.offsetWidth-4)+"px";
+      tip.style.top=(y+4)+"px";
+    });
+    hit.addEventListener("mouseleave",()=>tip.style.opacity=0);
+    svg.appendChild(hit);
+  });
+}
+
+function render(){
+  const c = calc();
+  $("l-phi").textContent = c.phi.toFixed(3);
+  $("l-sw").textContent  = (c.sw*100).toFixed(0)+" %";
+  $("l-rm").textContent  = c.rm.toFixed(2);
+  $("l-ro").textContent  = c.ro.toFixed(2);
+
+  $("dR").textContent = (c.dR>=0?"+":"") + nf(c.dR, Math.abs(c.dR)>=100?0:1) + "%";
+  $("dRlit").textContent = `${nf(c.r0)} → ${nf(c.r1)} Ω·m　（${nf(c.r1/c.r0,2)} 倍）`;
+  $("cR").innerHTML = `ρ = a·ρ<sub>w</sub>·φ<sup>−2</sup>·S<sub>w</sub><sup>−2</sup><br>`+
+    `前：1×10×${c.phi.toFixed(2)}<sup>−2</sup>×1<sup>−2</sup> = ${nf(c.r0)}<br>`+
+    `后：1×10×${c.phi.toFixed(2)}<sup>−2</sup>×${c.sw.toFixed(2)}<sup>−2</sup> = ${nf(c.r1)}`;
+
+  $("dD").textContent = (c.dD>=0?"+":"") + nf(c.dD,2) + "%";
+  $("dDlit").textContent = `${nf(c.d0,3)} → ${nf(c.d1,3)} g/cm³　（Δ = ${nf(c.d1-c.d0,3)}）`;
+  $("cD").innerHTML = `ρ<sub>b</sub> = (1−φ)ρ<sub>骨架</sub> + φ[S<sub>w</sub>ρ<sub>水</sub> + (1−S<sub>w</sub>)ρ<sub>油</sub>]<br>`+
+    `前：${nf(1-c.phi,2)}×${c.rm.toFixed(2)} + ${c.phi.toFixed(2)}×1.00 = ${nf(c.d0,3)}<br>`+
+    `后：${nf(1-c.phi,2)}×${c.rm.toFixed(2)} + ${c.phi.toFixed(2)}×${nf(c.sw*1+(1-c.sw)*c.ro,3)} = ${nf(c.d1,3)}`;
+
+  const ratio = Math.abs(c.dD) < 1e-9 ? Infinity : Math.abs(c.dR/c.dD);
+  $("ratio").textContent = isFinite(ratio) ? nf(ratio,0) : "∞";
+
+  bars(c);
+
+  // gravity reality check — infinite slab: Δg = 2πG·Δρ·t
+  const t = +IN.t.value, nz = +IN.nz.value;
+  $("l-t").textContent = t + " m";
+  $("l-nz").textContent = nz + " µGal";
+  const drho = (c.d1-c.d0)*1000;                       // g/cm3 -> kg/m3
+  const dg = Math.abs(2*Math.PI*G*drho*t) * 1e8;       // m/s^2 -> µGal (1 mGal=1e-5 m/s^2)
+  $("dg").textContent = nf(dg,1) + " µGal";
+  $("fill").style.width = Math.min(dg/100*100,100) + "%";
+  $("noiseMark").style.left = Math.min(nz/100*100,100) + "%";
+  const snr = dg / nz;
+  const b = $("badge");
+  b.className = "badge " + (snr >= 3 ? "yes" : "no");
+  b.textContent =
+    snr < 1  ? `信噪比 ${nf(snr,2)} —— 信号埋在噪声里，测不出来` :
+    snr < 3  ? `信噪比 ${nf(snr,1)} —— 与噪声同量级，勉强可辨，而且位场本身多解` :
+               `信噪比 ${nf(snr,1)} —— 重力能看见了，但仍无纵向分辨率`;
+}
+
+Object.values(IN).forEach(s => s.addEventListener("input", render));
+$("reset").onclick = () => {
+  IN.phi.value=0.20; IN.sw.value=30; IN.rm.value=2.65; IN.ro.value=0.80; IN.t.value=30; IN.nz.value=20;
+  render();
+};
+render();
+addEventListener("resize", render);
+</script>
+</body>
+</html>

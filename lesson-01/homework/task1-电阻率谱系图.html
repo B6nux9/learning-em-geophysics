@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>任务一 · 地下介质电阻率谱系图</title>
+<style>
+  :root{
+    color-scheme: light dark;
+    --surface-0:#f5f5f3; --surface-1:#fcfcfb; --border:#dedcd6;
+    --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#7a786f;
+    --grid:#e7e5df;
+    --s-rho:#2a78d6; --s-den:#eb6834; --s-vp:#1baf7a;
+    --accent-bg:#eef4fd;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      --surface-0:#121211; --surface-1:#1a1a19; --border:#33332f;
+      --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8e84;
+      --grid:#2b2b28;
+      --s-rho:#3987e5; --s-den:#d95926; --s-vp:#199e70;
+      --accent-bg:#16202e;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:28px 20px 64px;
+    background:var(--surface-0); color:var(--text-primary);
+    font:15px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  .wrap{max-width:1000px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 4px;letter-spacing:.2px}
+  .sub{color:var(--text-secondary);font-size:13.5px;margin:0 0 24px}
+  .card{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
+  .card h2{font-size:16px;margin:0 0 2px}
+  .card .hint{font-size:12.5px;color:var(--text-muted);margin:0 0 16px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+  button{
+    font:inherit;font-size:13px;padding:6px 13px;border-radius:999px;cursor:pointer;
+    border:1px solid var(--border);background:transparent;color:var(--text-secondary);
+    transition:.15s;
+  }
+  button:hover{border-color:var(--text-muted);color:var(--text-primary)}
+  button[aria-pressed="true"]{background:var(--s-rho);border-color:var(--s-rho);color:#fff}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12.5px;color:var(--text-secondary);margin-bottom:10px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .swatch{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .chartbox{position:relative;overflow-x:auto}
+  svg{display:block}
+  .tip{
+    position:absolute;pointer-events:none;opacity:0;transition:opacity .1s;
+    background:var(--surface-1);border:1px solid var(--border);border-radius:8px;
+    padding:8px 11px;font-size:12.5px;line-height:1.55;white-space:nowrap;
+    box-shadow:0 6px 20px rgba(0,0,0,.14);z-index:9;
+  }
+  .tip b{font-size:13px}
+  .tip .mono{font-variant-numeric:tabular-nums;color:var(--text-secondary)}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:6px}
+  .stat{background:var(--surface-0);border:1px solid var(--border);border-radius:10px;padding:13px 15px}
+  .stat .k{font-size:12px;color:var(--text-muted);margin-bottom:2px}
+  .stat .v{font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2}
+  .stat .u{font-size:12.5px;color:var(--text-secondary)}
+  .answer{border-left:3px solid var(--s-rho);background:var(--accent-bg);border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0 0}
+  .answer h3{margin:0 0 6px;font-size:14px}
+  .answer p{margin:0 0 8px;font-size:13.5px;color:var(--text-secondary)}
+  .answer p:last-child{margin-bottom:0}
+  .answer em{color:var(--text-primary);font-style:normal;font-weight:600}
+  table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border)}
+  th{color:var(--text-muted);font-weight:500;font-size:12px}
+  details{margin-top:14px}
+  summary{cursor:pointer;font-size:13px;color:var(--text-secondary)}
+  .foot{font-size:12.5px;color:var(--text-muted);text-align:center;margin-top:28px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>任务一 · 地下介质电阻率谱系图</h1>
+  <p class="sub">对数横轴 · 把「13 个数量级」变成眼睛看得见的东西</p>
+
+  <div class="card">
+    <h2>物性变化范围对比</h2>
+    <p class="hint">鼠标悬停查看每条的数值区间与跨越的数量级。</p>
+
+    <div class="controls">
+      <button id="btn-abs" aria-pressed="true">绝对量级（各自单位的对数轴）</button>
+      <button id="btn-rel" aria-pressed="false">对齐起点（只比动态范围）</button>
+    </div>
+
+    <div class="legend">
+      <span><i class="swatch" style="background:var(--s-rho)"></i><span>电阻率 ρ（Ω·m）</span></span>
+      <span><i class="swatch" style="background:var(--s-den)"></i><span>密度 ρ<sub>b</sub>（g/cm³）</span></span>
+      <span><i class="swatch" style="background:var(--s-vp)"></i><span>纵波速度 V<sub>p</sub>（km/s）</span></span>
+    </div>
+
+    <div class="chartbox" id="box">
+      <svg id="chart" role="img" aria-label="地下介质电阻率、密度、纵波速度的对数范围条形图"></svg>
+      <div class="tip" id="tip"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="k">电阻率 跨越</div><div class="v" style="color:var(--s-rho)">13.0</div><div class="u">个数量级　1e−5 → 1e8 Ω·m</div></div>
+      <div class="stat"><div class="k">密度 跨越</div><div class="v" style="color:var(--s-den)">0.70</div><div class="u">个数量级　1.0 → 5.0 g/cm³</div></div>
+      <div class="stat"><div class="k">纵波速度 跨越</div><div class="v" style="color:var(--s-vp)">1.45</div><div class="u">个数量级　0.3 → 8.5 km/s</div></div>
+    </div>
+
+    <details>
+      <summary>数据表（供核对 / 无障碍阅读）</summary>
+      <table id="tbl"><thead><tr><th>介质 / 物性</th><th>下限</th><th>上限</th><th>倍数</th><th>数量级</th></tr></thead><tbody></tbody></table>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>要回答的问题</h2>
+
+    <div class="answer">
+      <h3>1 · 最导电与最高阻的介质之间相差多少个数量级？</h3>
+      <p>最导电：块状金属硫化物矿体，下限 <em>1×10⁻⁵ Ω·m</em>。<br>
+         最高阻：干燥岩盐 / 冻土冰，上限 <em>1×10⁸ Ω·m</em>。</p>
+      <p>比值 = 10⁸ ÷ 10⁻⁵ = <em>10¹³</em>，即 <em>13 个数量级</em>（一万亿倍）。</p>
+    </div>
+
+    <div class="answer">
+      <h3>2 · 三者放在一起，我看到了什么</h3>
+      <p>点一下上面的「对齐起点」，三条棒的长度比是 <em>13 : 1.45 : 0.70</em>。
+         在对数轴上电阻率横穿整张图，密度和速度缩成两根几乎看不见的短钉子。</p>
+      <p>换成线性倍数说：电阻率能变 <em>10 000 000 000 000 倍</em>，
+         纵波速度只能变 <em>28 倍</em>，密度只能变 <em>5 倍</em>。</p>
+      <p><em>感受：</em>其它物性是在「同一个数量级里挪一挪」，电阻率是在「换数量级」。
+         做重力、做地震，你是在噪声里抠百分之几的差异；做电磁法，目标体和围岩的差别
+         往往是十倍、百倍、千倍——信号自己会跳出来。</p>
+      <p><em>这就是电磁法之所以存在的根本理由：</em>地球把最大的物性对比度，
+         恰好留给了导电性这一项。而这 13 个数量级几乎全部由「水 + 离子 + 连通孔隙」控制，
+         所以电磁法天然是一种<em>找水、找流体、找矿化带</em>的方法——它测的不是岩石本身，
+         是岩石里的水和电子导体。</p>
+    </div>
+  </div>
+
+  <p class="foot">第 01 课作业 · 电磁勘探理论与方法</p>
+</div>
+
+<script>
+const MEDIA = [
+  {name:"块状金属硫化物矿体", lo:1e-5, hi:1,    g:"rho"},
+  {name:"石墨化岩石",         lo:1e-4, hi:1e-1, g:"rho"},
+  {name:"卤水 / 高矿化度地下水", lo:0.01, hi:0.5, g:"rho"},
+  {name:"海水",               lo:0.2,  hi:0.3,  g:"rho"},
+  {name:"黏土 / 泥岩",        lo:1,    hi:100,  g:"rho"},
+  {name:"含水砂岩",           lo:10,   hi:500,  g:"rho"},
+  {name:"石灰岩",             lo:50,   hi:1e4,  g:"rho"},
+  {name:"新鲜花岗岩",         lo:1e3,  hi:1e6,  g:"rho"},
+  {name:"干燥岩盐",           lo:1e6,  hi:1e8,  g:"rho"},
+  {name:"冻土 / 冰",          lo:1e5,  hi:1e8,  g:"rho"},
+  {name:"密度（g/cm³）",       lo:1.0,  hi:5.0,  g:"den", sep:true},
+  {name:"纵波速度（km/s）",    lo:0.3,  hi:8.5,  g:"vp"}
+];
+const COLOR = {rho:"var(--s-rho)", den:"var(--s-den)", vp:"var(--s-vp)"};
+const UNIT  = {rho:"Ω·m", den:"g/cm³", vp:"km/s"};
+
+let mode = "abs";
+const svg = document.getElementById("chart");
+const box = document.getElementById("box");
+const tip = document.getElementById("tip");
+const NS  = "http://www.w3.org/2000/svg";
+
+function el(t, a){ const n = document.createElementNS(NS, t); for(const k in a) n.setAttribute(k, a[k]); return n; }
+function fmt(v){
+  if(v === 0) return "0";
+  const e = Math.log10(v);
+  if(Math.abs(e - Math.round(e)) < 1e-9 && (v >= 1e4 || v < 0.01)) return "10" + sup(Math.round(e));
+  if(v >= 1000) return v.toLocaleString("en-US");
+  return String(+v.toPrecision(3));
+}
+function sup(n){
+  const m = {"-":"⁻","0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹"};
+  return String(n).split("").map(c => m[c]).join("");
+}
+
+function draw(){
+  const W  = Math.max(box.clientWidth, 620);
+  const padL = 150, padR = 24, padT = 26, padB = 44;
+  const rowH = 27, barH = 15;
+  const H  = padT + MEDIA.length * rowH + padB;
+  const pw = W - padL - padR;
+
+  const lo = mode === "abs" ? -6 : 0;
+  const hi = mode === "abs" ?  9 : 14;
+  const x  = d => padL + (d - lo) / (hi - lo) * pw;
+
+  svg.setAttribute("width", W);
+  svg.setAttribute("height", H);
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.textContent = "";
+
+  // grid + axis ticks (every decade)
+  for(let d = lo; d <= hi; d++){
+    const px = x(d);
+    svg.appendChild(el("line", {x1:px, x2:px, y1:padT - 8, y2:H - padB,
+      stroke:"var(--grid)", "stroke-width":1}));
+    const t = el("text", {x:px, y:H - padB + 17, "text-anchor":"middle",
+      fill:"var(--text-muted)", "font-size":11, "font-family":"inherit"});
+    t.textContent = mode === "abs" ? "10" + sup(d) : d;
+    svg.appendChild(t);
+  }
+  const ax = el("text", {x:padL + pw / 2, y:H - 6, "text-anchor":"middle",
+    fill:"var(--text-secondary)", "font-size":11.5, "font-family":"inherit"});
+  ax.textContent = mode === "abs"
+    ? "对数轴（各物性用各自的单位：Ω·m / g·cm⁻³ / km·s⁻¹）"
+    : "跨越的数量级 —— 每条都从 0 起算（纯动态范围对比）";
+  svg.appendChild(ax);
+
+  MEDIA.forEach((m, i) => {
+    const y  = padT + i * rowH;
+    const cy = y + rowH / 2;
+    const dec = Math.log10(m.hi / m.lo);
+    const x0 = mode === "abs" ? x(Math.log10(m.lo)) : x(0);
+    const x1 = mode === "abs" ? x(Math.log10(m.hi)) : x(dec);
+    const w  = Math.max(x1 - x0, 3);
+
+    if(m.sep){
+      svg.appendChild(el("line", {x1:14, x2:W - padR, y1:y - 3, y2:y - 3,
+        stroke:"var(--border)", "stroke-width":1, "stroke-dasharray":"3 3"}));
+    }
+
+    const lab = el("text", {x:padL - 12, y:cy + 4, "text-anchor":"end",
+      fill:"var(--text-primary)", "font-size":12.5, "font-family":"inherit"});
+    lab.textContent = m.name;
+    svg.appendChild(lab);
+
+    const r = el("rect", {x:x0, y:cy - barH / 2, width:w, height:barH, rx:4,
+      fill:COLOR[m.g], "shape-rendering":"crispEdges"});
+    r.style.cursor = "crosshair";
+    svg.appendChild(r);
+
+    const v = el("text", {x:x1 + 8, y:cy + 4, fill:"var(--text-secondary)",
+      "font-size":11, "font-family":"inherit", "font-variant-numeric":"tabular-nums"});
+    v.textContent = dec.toFixed(dec >= 10 ? 0 : 2).replace(/\.00$/, "") + " 个数量级";
+    svg.appendChild(v);
+
+    // generous hit target
+    const hit = el("rect", {x:padL, y:y, width:pw, height:rowH, fill:"transparent"});
+    hit.addEventListener("mousemove", ev => {
+      const b = box.getBoundingClientRect();
+      tip.innerHTML =
+        `<b>${m.name}</b><br>` +
+        `<span class="mono">${fmt(m.lo)} – ${fmt(m.hi)} ${UNIT[m.g]}</span><br>` +
+        `<span class="mono">最大 / 最小 = ${(m.hi / m.lo).toLocaleString("en-US", {maximumFractionDigits:0})} 倍 · ${dec.toFixed(2)} 个数量级</span>`;
+      tip.style.opacity = 1;
+      const tw = tip.offsetWidth;
+      tip.style.left = Math.min(ev.clientX - b.left + 14, box.clientWidth - tw - 4) + "px";
+      tip.style.top  = (y + box.scrollTop - 6) + "px";
+    });
+    hit.addEventListener("mouseleave", () => tip.style.opacity = 0);
+    svg.appendChild(hit);
+  });
+}
+
+// table
+const tb = document.querySelector("#tbl tbody");
+MEDIA.forEach(m => {
+  const dec = Math.log10(m.hi / m.lo);
+  const tr = document.createElement("tr");
+  tr.innerHTML = `<td>${m.name}</td><td>${fmt(m.lo)}</td><td>${fmt(m.hi)}</td>` +
+    `<td>${(m.hi / m.lo).toLocaleString("en-US", {maximumFractionDigits:0})}×</td><td>${dec.toFixed(2)}</td>`;
+  tb.appendChild(tr);
+});
+
+const bA = document.getElementById("btn-abs"), bR = document.getElementById("btn-rel");
+bA.onclick = () => { mode = "abs"; bA.setAttribute("aria-pressed", "true");  bR.setAttribute("aria-pressed", "false"); draw(); };
+bR.onclick = () => { mode = "rel"; bA.setAttribute("aria-pressed", "false"); bR.setAttribute("aria-pressed", "true");  draw(); };
+
+draw();
+addEventListener("resize", draw);
+</script>
+</body>
+</html>
