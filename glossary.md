@@ -26,6 +26,11 @@
 | **GPR** | **G**round **P**enetrating **R**adar | **探地雷达**；朝地下打的雷达，工作在波动区，测反射 | L02 |
 | **MCSEM** | **M**arine **C**ontrolled-**S**ource **E**lectro**M**agnetic | 海洋可控源电磁法；海上油气直接烃类检测 | L02 |
 | **ELF** | **E**xtremely **L**ow **F**requency | 极低频（约 3–3000 Hz 一段）；穿透海水/地下，潜艇通信 | L02 |
+| **IP** | **I**nduced **P**olarization | 激发极化法；传导类电法，测可充电性，找浸染状金属矿 | L03 附录 |
+| **SIP** | **S**pectral **I**nduced **P**olarization | 谱激电；反演 Cole-Cole 参数识别矿物 | L03 附录 |
+| **PFE** | **P**ercent **F**requency **E**ffect | 频散率；频率域 IP 的观测量 | L03 附录 |
+| **SP** | **S**elf **P**otential | 自然电场法；传导类电法 | L03 附录 |
+| **DOI** | **D**epth **O**f **I**nvestigation | 勘探深度；反演中数据真正约束到的深度，最保守 | L03 |
 
 ## 极化模式（注意：这里的 T 是 Transverse 横向，不是 Transient！）
 
@@ -45,7 +50,10 @@
 | 视电阻率 | apparent resistivity, ρₐ | 按均匀半空间公式反算的等效电阻率（非真值） | L01 |
 | 地层因子 | **F**ormation **F**actor, F = ρ₀/ρ_w | 岩石骨架把水电阻率放大的倍数；只与岩石几何有关 | L01 附录 |
 | 电阻率指数 | Resistivity **I**ndex, I = ρ_t/ρ₀ | 部分饱和相对全饱和电阻率涨的倍数；含烃指标 | L01 附录 |
-| 趋肤深度 | skin depth, δ | 场衰减到 1/e 的深度；δ≈503√(ρ/f) | L03 |
+| 趋肤深度 | skin depth, δ | 场衰减到 1/e（≈37%）的深度；δ≈503√(ρ/f) | L03 |
+| 烟圈 | smoke ring | 关断瞬间大地感应的真实涡流电流环，随时间下沉/外扩/变淡；d∝√(ρt) | L03 |
+| 可充电性 | chargeability, M | IP 观测量，衡量矿体"充电"能力；mV/V 或 ms | L03 附录 |
+| 极化 | polarization | 通电时金属/水界面离子堆积（电极极化）或黏土孔道（薄膜极化） | L03 附录 |
 | 传导电流 | conduction current, σE | 自由电荷真实流动，耗散成焦耳热 | L02 |
 | 位移电流 | displacement current, ε∂E/∂t | 电场变化的等效电流，储能可回；波之所以存在的拼图 | L02 |
 | 准静态近似 | quasi-static approximation | 忽略位移电流、只保留传导电流 | L02 |
